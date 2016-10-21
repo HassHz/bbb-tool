@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.sakaiproject.authz.api.Member;
 import org.sakaiproject.authz.api.Role;
@@ -69,6 +70,9 @@ import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserDirectoryService;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.util.ResourceLoader;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.Claims;
 
 /**
  * BBBMeetingEntityProvider is the EntityProvider class that implements several
@@ -958,6 +962,32 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
             map.put("level", meetingManager.getNoticeLevel());
         }
         return new ActionReturn(map);
+    }
+
+    @EntityCustomAction(viewKey = EntityView.VIEW_NEW)
+    public ActionReturn meetingEvents(Map<String, Object> params) {
+        if (logger.isDebugEnabled())
+            logger.debug("meetingEvents");
+        String bbbSaltString = serverConfigurationService.getString(BBBMeetingManager.CFG_SALT);
+        String bbbSalt = new String(Base64.encodeBase64(bbbSaltString.getBytes()));
+        
+        Claims claims = Jwts.parser().setSigningKey(bbbSalt).parseClaimsJws(params.get("signed_parameters").toString()).getBody();
+        String meeting_id = claims.get("meeting_id").toString();
+        logger.debug("Meeting ID: " + meeting_id);
+        ArrayList<HashMap<String, Object>> events = (ArrayList) claims.get("events");
+        logger.debug("Events: " + events);
+
+        meetingManager.handleMeetingEvents(meeting_id, events);
+
+        ActionReturn response = null;
+        if (meeting_id != null && meeting_id != "") {
+            response = new ActionReturn("OK");
+            response.setResponseCode(200);
+        } else { 
+            response = new ActionReturn("Gone");
+            response.setResponseCode(410);
+        }
+        return response;
     }
 
     // --- Statisticable

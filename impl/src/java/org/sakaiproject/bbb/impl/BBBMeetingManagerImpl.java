@@ -383,6 +383,32 @@ public class BBBMeetingManagerImpl implements BBBMeetingManager {
         logEvent(EVENT_MEETING_JOIN, meeting);
     }
 
+    public void handleMeetingEvents(String meetingID, ArrayList<HashMap<String, Object>> events) {
+        BBBMeeting meeting = storageManager.getMeeting(meetingID);
+        if (events == null || meeting == null)
+            return;
+
+        for (HashMap<String, Object> event : events) {
+            User user = null;
+            String eventName = "";
+            for (Map.Entry<String, Object> entry : event.entrySet()) {
+                if (entry.getKey() == "user" && entry.getValue() != "") {
+                    try {
+                        user = userDirectoryService.getUser((String) entry.getValue());
+                    } catch (UserNotDefinedException e) {
+                        logger.debug(e);
+                    }
+                } else if (entry.getKey() == "event" && entry.getValue() != "") {
+                    eventName = (String) entry.getValue();
+                }
+            }
+            if (user != null && eventName != "") {
+                logUserEvent(eventName, meeting, user);
+            }
+        }
+        
+    }
+
     public boolean endMeeting(String meetingId) 
     		throws SecurityException, BBBException {
         BBBMeeting meeting = storageManager.getMeeting(meetingId);
@@ -1134,6 +1160,36 @@ public class BBBMeetingManagerImpl implements BBBMeetingManager {
 
     private void logEvent(String event, BBBMeeting meeting) {
         eventTrackingService.post(eventTrackingService.newEvent(event, meeting.getId(), meeting.getSiteId(), true, NotificationService.NOTI_OPTIONAL));
+    }
+
+    private void logUserEvent(String event, BBBMeeting meeting, User user) {
+        String eventName = "";
+        if (event.equals("user_left")) {
+            eventName = EVENT_MEETING_LEFT;
+        } else if (event.equals("user_presenter")) {
+            eventName = EVENT_MEETING_PRESENTER;
+        } else if (event.equals("user_chat_public")) {
+            eventName = EVENT_MEETING_CHAT_PUBLIC;
+        } else if (event.equals("user_rise_hand")) {
+            eventName = EVENT_MEETING_RAISE_HAND;
+        } else if (event.equals("user_voice_start")) {
+            eventName = EVENT_MEETING_VOICE_START;
+        } else if (event.equals("user_voice_stop")) {
+            eventName = EVENT_MEETING_VOICE_STOP;
+        } else if (event.equals("user_webcam_start")) {
+            eventName = EVENT_MEETING_WEBCAM_START;
+        } else if (event.equals("user_webcam_stop")) {
+            eventName = EVENT_MEETING_WEBCAM_STOP;
+        } else if (event.equals("user_desktop_start")) {
+            eventName = EVENT_MEETING_DESKTOP_START;
+        } else if (event.equals("user_desktop_stop")) {
+            eventName = EVENT_MEETING_DESKTOP_STOP;
+        } else if (event.equals("user_poll_response")) {
+            eventName = EVENT_MEETING_POLL_RESPONSE;
+        } else {
+            return;
+        }
+        eventTrackingService.post(eventTrackingService.newEvent(eventName, meeting.getId(), meeting.getSiteId(), true, NotificationService.NOTI_OPTIONAL), user);
     }
 
     public Participant getParticipantFromMeeting(BBBMeeting meeting, String userId) {

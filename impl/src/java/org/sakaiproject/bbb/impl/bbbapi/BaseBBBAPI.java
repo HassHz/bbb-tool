@@ -182,6 +182,14 @@ public class BaseBBBAPI implements BBBAPI {
             }
             // BSN: Ends
 
+            //Events
+            query.append("&meta_bn-meeting-events-url=");
+            StringBuilder meetingEventsUrl = new StringBuilder(config.getServerUrl());
+            meetingEventsUrl.append("/direct");
+            meetingEventsUrl.append(BBBMeetingManager.TOOL_WEBAPP);
+            meetingEventsUrl.append("/meetingEvents");
+            query.append(URLEncoder.encode(meetingEventsUrl.toString(), getParametersEncoding()));
+
             // Composed Welcome message
             ResourceLoader toolMessages = new ResourceLoader("ToolMessages");
             String welcomeMessage = toolMessages.getFormattedMessage("bbb_welcome_message_opening", new Object[] { "<b>%%CONFNAME%%</b>" } );
@@ -391,10 +399,10 @@ public class BaseBBBAPI implements BBBAPI {
         }
         joinQuery.append("&password=");
         joinQuery.append(password);
-        //if (userId != null) {
-        //    joinQuery.append("&userID=");
-        //    joinQuery.append(userId);
-        //}
+        if (userId != null) {
+            joinQuery.append("&userID=");
+            joinQuery.append(userId);
+        }
         joinQuery.append(getCheckSumParameterForQuery(APICALL_JOIN, joinQuery.toString()));
 
         StringBuilder url = new StringBuilder(bbbUrl);

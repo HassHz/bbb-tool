@@ -58,7 +58,14 @@
           <groupId>commons-betwixt</groupId>
           <artifactId>commons-betwixt</artifactId>
         </dependency>
-		
+        
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.7.0</version>
+        </dependency>
+        
 		<!-- Others -->
         <dependency>
             <groupId>org.mnode.ical4j</groupId>

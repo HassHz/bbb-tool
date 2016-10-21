@@ -18,6 +18,8 @@ package org.sakaiproject.bbb.api;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.sakaiproject.bbb.api.BBBException;
 
@@ -82,8 +84,30 @@ public interface BBBMeetingManager {
     public static final String EVENT_MEETING_EDIT = "bbb.edit";
     /** A meeting was ended on the BBB server */
     public static final String EVENT_MEETING_END = "bbb.end";
-    /** An user joined a meeting on the BBB server */
+    /** A user joined a meeting on the BBB server */
     public static final String EVENT_MEETING_JOIN = "bbb.join";
+    /** A user left a meeting on the BBB server */
+    public static final String EVENT_MEETING_LEFT = "bbb.meeting.left";
+    /** A user presented on the BBB server */
+    public static final String EVENT_MEETING_PRESENTER = "bbb.meeting.presenter";
+    /** A user used public chat in a meeting on the BBB server */
+    public static final String EVENT_MEETING_CHAT_PUBLIC = "bbb.meeting.chat_public";
+    /** A user raised hand in a meeting on the BBB server */
+    public static final String EVENT_MEETING_RAISE_HAND = "bbb.meeting.raise_hand";
+    /** A user started voice chat in a meeting on the BBB server */
+    public static final String EVENT_MEETING_VOICE_START = "bbb.meeting.voice_start";
+    /** A user stopped voice chat in a meeting on the BBB server */
+    public static final String EVENT_MEETING_VOICE_STOP = "bbb.meeting.voice_stop";
+    /** A user started webcam in a meeting on the BBB server */
+    public static final String EVENT_MEETING_WEBCAM_START = "bbb.meeting.webcam_start";
+    /** A user stopped webcam in a meeting on the BBB server */
+    public static final String EVENT_MEETING_WEBCAM_STOP = "bbb.meeting.webcam_stop";
+    /** A user started desktop sharing in a meeting on the BBB server */
+    public static final String EVENT_MEETING_DESKTOP_START = "bbb.meeting.desktop_start";
+    /** A user stopped desktop sharing in a meeting on the BBB server */
+    public static final String EVENT_MEETING_DESKTOP_STOP = "bbb.meeting.desktop_stop";
+    /** A user responded to a poll in a meeting on the BBB server */
+    public static final String EVENT_MEETING_POLL_RESPONSE = "bbb.meeting.poll_response";
     /** A recording was deleted on the BBB server */
     public static final String EVENT_RECORDING_DELETE = "bbb.recording.delete";
     /** A recording was published on the BBB server */
@@ -94,7 +118,10 @@ public interface BBBMeetingManager {
     /** ALL Log Events */
     public static final String[] EVENT_KEYS = new String[] {
             EVENT_MEETING_CREATE, EVENT_MEETING_EDIT, EVENT_MEETING_END,
-            EVENT_MEETING_JOIN };
+            EVENT_MEETING_JOIN, EVENT_MEETING_LEFT, EVENT_MEETING_PRESENTER, 
+            EVENT_MEETING_CHAT_PUBLIC, EVENT_MEETING_RAISE_HAND, EVENT_MEETING_VOICE_START, 
+            EVENT_MEETING_VOICE_STOP, EVENT_MEETING_WEBCAM_START, EVENT_MEETING_WEBCAM_STOP, 
+            EVENT_MEETING_DESKTOP_START, EVENT_MEETING_DESKTOP_STOP, EVENT_MEETING_POLL_RESPONSE };
     
 
     public static final boolean INCLUDE_DELETED_MEETINGS = true;
@@ -175,6 +202,11 @@ public interface BBBMeetingManager {
      * meeting
      */
     public void logMeetingJoin(String meetingID);
+
+    /**
+     * Log all meeting events with the corresponding user
+     */
+     public void handleMeetingEvents(String meetingID, ArrayList<HashMap<String, Object>> events);
 
     /**
      * Currently clears up the Sakai records and endMeeting.
