@@ -48,6 +48,7 @@ import org.sakaiproject.bbb.api.BBBMeeting;
 import org.sakaiproject.bbb.api.BBBMeetingManager;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.component.cover.ComponentManager;
+import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.util.ResourceLoader;
 import org.w3c.dom.Document;
@@ -104,6 +105,8 @@ public class BaseBBBAPI implements BBBAPI {
     public final static String APIVERSION_LATEST = APIVERSION_081;
 
     protected ServerConfigurationService config;
+
+    private ContentHostingService m_contentHostingService = (ContentHostingService) ComponentManager.get("org.sakaiproject.content.api.ContentHostingService");
 
     protected Random randomGenerator = new Random(System.currentTimeMillis());
 
@@ -205,19 +208,41 @@ public class BaseBBBAPI implements BBBAPI {
             if (duration.compareTo("0") > 0)
                 welcomeMessage += "<br><br><b>" + toolMessages.getFormattedMessage("bbb_welcome_message_duration_warning", new Object[] { duration });
 
+            String recordingReadyNotification = meeting.getRecordingReadyNotification() != null && meeting.getRecordingReadyNotification().booleanValue() ? "true" : "false";
+            if (recordingReadyNotification == "true" && recording == "true" && bbbUrl.contains("blindsidenetworks.com")){
+                query.append("&meta_bn-recording-ready-url=");
+                StringBuilder recordingReadyUrl = new StringBuilder(config.getServerUrl());
+                recordingReadyUrl.append("/direct");
+                recordingReadyUrl.append(BBBMeetingManager.TOOL_WEBAPP);
+                recordingReadyUrl.append("/recordingReady");
+                query.append(URLEncoder.encode(recordingReadyUrl.toString(), getParametersEncoding()));
+            }
+
             query.append("&welcome=");
             query.append(URLEncoder.encode(welcomeMessage, getParametersEncoding()));
 
             query.append(getCheckSumParameterForQuery(APICALL_CREATE, query.toString()));
 
+            //preupload presentation
+            String xml_presentation = "";
+            if (meeting.getPreuploadPresentation()){
+                if (meeting.getPresentation() != "" && meeting.getPresentation() != null){
+                    m_contentHostingService.setPubView(meeting.getPresentation().substring(meeting.getPresentation().indexOf("/attachment")), true);
+                    StringBuilder presentationUrl = new StringBuilder(config.getServerUrl());
+                    presentationUrl.append(meeting.getPresentation());
+                    xml_presentation = "<modules> <module name=\"presentation\"> <document url=\""+presentationUrl+"\" /> </module> </modules>";
+                    logger.debug(xml_presentation);
+                }
+            }
+
             // do API call
-            Map<String, Object> response = doAPICall(APICALL_CREATE, query.toString());
+            Map<String, Object> response = doAPICall(APICALL_CREATE, query.toString(), xml_presentation);
         } catch (BBBException e) {
             throw e;
         } catch (UnsupportedEncodingException e) {
             throw new BBBException(BBBException.MESSAGEKEY_INTERNALERROR, e.getMessage(), e);
         }
-
+        m_contentHostingService.setPubView(meeting.getPresentation().substring(meeting.getPresentation().indexOf("/attachment")), false);
         return meeting;
     }
 
@@ -406,7 +431,11 @@ public class BaseBBBAPI implements BBBAPI {
         joinQuery.append(getCheckSumParameterForQuery(APICALL_JOIN, joinQuery.toString()));
 
         StringBuilder url = new StringBuilder(bbbUrl);
-        url.append(API_SERVERPATH);
+        if (url.toString().endsWith("/api")) {
+            url.append("/");
+        } else {
+            url.append(API_SERVERPATH);
+        }
         url.append(APICALL_JOIN);
         url.append("?");
         url.append(joinQuery);
@@ -468,11 +497,20 @@ public class BaseBBBAPI implements BBBAPI {
         return "UTF-8";
     }
 
+    protected Map<String, Object> doAPICall(String apiCall, String query)
+            throws BBBException {
+        return doAPICall(apiCall, query, "");
+    }
+
     /** Make an API call */
-    protected Map<String, Object> doAPICall(String apiCall, String query) 
+    protected Map<String, Object> doAPICall(String apiCall, String query, String presentation) 
             throws BBBException {
         StringBuilder urlStr = new StringBuilder(bbbUrl);
-        urlStr.append(API_SERVERPATH);
+        if (urlStr.toString().endsWith("/api")){
+            urlStr.append("/");
+        } else {
+            urlStr.append(API_SERVERPATH);
+        }
         urlStr.append(apiCall);
         if (query != null) {
             urlStr.append("?");
@@ -487,7 +525,20 @@ public class BaseBBBAPI implements BBBAPI {
             HttpURLConnection httpConnection = (HttpURLConnection) url.openConnection();
             httpConnection.setUseCaches(false);
             httpConnection.setDoOutput(true);
-            httpConnection.setRequestMethod("GET");
+            if(presentation != ""){
+                httpConnection.setRequestMethod("POST");
+                httpConnection.setRequestProperty("Content-Type", "text/xml");
+                httpConnection.setRequestProperty("Content-Length", "" + Integer.toString(presentation.getBytes().length));
+                httpConnection.setRequestProperty("Content-Language", "en-US");
+                httpConnection.setDoInput(true);
+                
+                DataOutputStream wr = new DataOutputStream( httpConnection.getOutputStream() );
+                wr.writeBytes (presentation);
+                wr.flush();
+                wr.close();
+            } else {
+                httpConnection.setRequestMethod("GET");
+            }
             httpConnection.connect();
 
             int responseCode = httpConnection.getResponseCode();
@@ -586,14 +637,28 @@ public class BaseBBBAPI implements BBBAPI {
     protected Map<String, Object> processNode(Node _node) {
         Map<String, Object> map = new HashMap<String, Object>();
         NodeList responseNodes = _node.getChildNodes();
+        int images = 1; //counter for images (i.e image1, image2, image3)
         for (int i = 0; i < responseNodes.getLength(); i++) {
             Node node = responseNodes.item(i);
             String nodeName = node.getNodeName().trim();
             if (node.getChildNodes().getLength() == 1
                     && ( node.getChildNodes().item(0).getNodeType() == org.w3c.dom.Node.TEXT_NODE || node.getChildNodes().item(0).getNodeType() == org.w3c.dom.Node.CDATA_SECTION_NODE) ) {
                 String nodeValue = node.getTextContent();
-                map.put(nodeName, nodeValue != null ? nodeValue.trim() : null);
-            
+                if (nodeName == "image" && node.getAttributes() != null){
+                    Map<String, String> imageMap = new HashMap<String, String>();
+                    Node heightAttr = node.getAttributes().getNamedItem("height");
+                    Node widthAttr = node.getAttributes().getNamedItem("width");
+                    Node altAttr = node.getAttributes().getNamedItem("alt");
+
+                    imageMap.put("height", heightAttr.getNodeValue());
+                    imageMap.put("width", widthAttr.getNodeValue());
+                    imageMap.put("title", altAttr.getNodeValue());
+                    imageMap.put("url", nodeValue);
+                    map.put(nodeName + images, imageMap);
+                    images++;
+                } else {
+                    map.put(nodeName, nodeValue != null ? nodeValue.trim() : null);
+                }
             } else if (node.getChildNodes().getLength() == 0
                     && node.getNodeType() != org.w3c.dom.Node.TEXT_NODE 
                     && node.getNodeType() != org.w3c.dom.Node.CDATA_SECTION_NODE) {
@@ -608,7 +673,12 @@ public class BaseBBBAPI implements BBBAPI {
                     Node n = node.getChildNodes().item(c);
                     list.add(processNode(n));
                 }
-                map.put(nodeName, list);
+                if (nodeName == "preview"){
+                    Node n = node.getChildNodes().item(0);
+                    map.put(nodeName, processNode(n));
+                }else{
+                    map.put(nodeName, list);
+                }
             
             } else {
                 map.put(nodeName, processNode(node));

@@ -62,6 +62,8 @@ public class BBBAPIWrapper/* implements Runnable */{
     private boolean bbbRecordingEnabled = true;
     /** BBB default value for 'recording' checkbox (default to false) */
     private boolean bbbRecordingDefault = false;
+    /** BBB default value for 'recording ready notification' checkbox (default to false) */
+    private boolean bbbRecordingReadyNotificationDefault = false;
     /** BBB UX maximum length allowed for meeting description (default 2083) */
     private int bbbDescriptionMaxLength = 2048;
     /** BBB UX textBox type for meeting description (default fckeditor) */
@@ -78,7 +80,14 @@ public class BBBAPIWrapper/* implements Runnable */{
     private boolean bbbMultipleSessionsAllowedEnabled = false;
     /** BBB default value for 'Users can open multiple sessions' checkbox (default to false) */
     private boolean bbbMultipleSessionsAllowedDefault = true;
-
+    /** BBB UX flag to activate/deactivate 'preupload presentation' chekbox (default to false) */
+    private boolean bbbPreuploadPresentationEnabled = false;
+    /** BBB default value for 'Preupload presentation' checkbox (default to false) */
+    private boolean bbbPreuploadPresentationDefault = false;
+    /** BBB default value for 'one session per group' checkbox (default to false) */
+    private boolean bbbOneSessionPerGroupEnabled = false;
+    /** BBB default value for 'one session per group' checkbox (default to false) */
+    private boolean bbbOneSessionPerGroupDefault = false;
     
     /** BBB API */
     private BBBAPI api = null;
@@ -134,6 +143,7 @@ public class BBBAPIWrapper/* implements Runnable */{
         bbbGetSiteRecordings = (boolean) config.getBoolean(BBBMeetingManager.CFG_GETSITERECORDINGS, bbbGetSiteRecordings);
         bbbRecordingEnabled = (boolean) config.getBoolean(BBBMeetingManager.CFG_RECORDING_ENABLED, bbbRecordingEnabled);
         bbbRecordingDefault = (boolean) config.getBoolean(BBBMeetingManager.CFG_RECORDING_DEFAULT, bbbRecordingDefault);
+        bbbRecordingReadyNotificationDefault = (boolean) config.getBoolean(BBBMeetingManager.CFG_RECORDINGREADYNOTIFICATION_DEFAULT, bbbRecordingReadyNotificationDefault);
         bbbDescriptionMaxLength = (int) config.getInt(BBBMeetingManager.CFG_DESCRIPTIONMAXLENGTH, bbbDescriptionMaxLength);
         bbbDescriptionType = (String) config.getString(BBBMeetingManager.CFG_DESCRIPTIONTYPE, bbbDescriptionType);
         bbbDurationEnabled = (boolean) config.getBoolean(BBBMeetingManager.CFG_DURATION_ENABLED, bbbDurationEnabled);
@@ -142,7 +152,11 @@ public class BBBAPIWrapper/* implements Runnable */{
         bbbWaitModeratorDefault = (boolean) config.getBoolean(BBBMeetingManager.CFG_WAITMODERATOR_DEFAULT, bbbWaitModeratorDefault);
         bbbMultipleSessionsAllowedEnabled = (boolean) config.getBoolean(BBBMeetingManager.CFG_MULTIPLESESSIONSALLOWED_ENABLED, bbbMultipleSessionsAllowedEnabled);
         bbbMultipleSessionsAllowedDefault = (boolean) config.getBoolean(BBBMeetingManager.CFG_MULTIPLESESSIONSALLOWED_DEFAULT, bbbMultipleSessionsAllowedDefault);
-        
+        bbbPreuploadPresentationEnabled = (boolean) config.getBoolean(BBBMeetingManager.CFG_PREUPLOADPRESENTATION_ENABLED, bbbPreuploadPresentationEnabled);
+        bbbPreuploadPresentationDefault = (boolean) config.getBoolean(BBBMeetingManager.CFG_PREUPLOADPRESENTATION_DEFAULT, bbbPreuploadPresentationDefault);
+        bbbOneSessionPerGroupEnabled = (boolean) config.getBoolean(BBBMeetingManager.CFG_ONESESSIONPERGROUP_ENABLED, bbbOneSessionPerGroupEnabled);
+        bbbOneSessionPerGroupDefault = (boolean) config.getBoolean(BBBMeetingManager.CFG_ONESESSIONPERGROUP_DEFAULT, bbbOneSessionPerGroupDefault);
+
     }
 
     public void destroy() {
@@ -174,6 +188,28 @@ public class BBBAPIWrapper/* implements Runnable */{
             return false;
 
         return api.isMeetingRunning(meetingID);
+    }
+
+    public Map<String, Object> getMeetings()
+            throws BBBException {
+        if (logger.isDebugEnabled()) logger.debug("getMeetings()");
+
+        Map<String, Object> meetings = new HashMap<String, Object>();
+        if ( api != null) {
+            try{
+                meetings = api.getMeetings();
+            } catch ( BBBException e){
+                if( BBBException.MESSAGEKEY_UNREACHABLE.equals(e.getMessageKey()) || 
+                        BBBException.MESSAGEKEY_HTTPERROR.equals(e.getMessageKey()) ||
+                        BBBException.MESSAGEKEY_INVALIDRESPONSE.equals(e.getMessageKey()) ){
+                    meetings = responseError(e.getMessageKey(), e.getMessage() );
+                }
+            } catch ( Exception e){
+                meetings = responseError(BBBException.MESSAGEKEY_UNREACHABLE, e.getMessage() );
+            }
+        }
+
+        return meetings;
     }
 
     public Map<String, Object> getMeetingInfo(String meetingID, String password)
@@ -337,6 +373,10 @@ public class BBBAPIWrapper/* implements Runnable */{
     public boolean getRecordingDefault(){
         return bbbRecordingDefault;
     }
+    
+    public boolean getRecordingReadyNotificationDefault(){
+        return bbbRecordingReadyNotificationDefault;
+    }
 
     public boolean isDurationEnabled(){
         return bbbDurationEnabled;
@@ -360,6 +400,22 @@ public class BBBAPIWrapper/* implements Runnable */{
 
     public boolean getMultipleSessionsAllowedDefault(){
         return bbbMultipleSessionsAllowedDefault;
+    }
+
+    public boolean isPreuploadPresentationEnabled(){
+        return bbbPreuploadPresentationEnabled;
+    }
+
+    public boolean getPreuploadPresentationDefault(){
+        return bbbPreuploadPresentationDefault;
+    }
+
+    public boolean isOneSessionPerGroupEnabled(){
+        return bbbOneSessionPerGroupEnabled;
+    }
+
+    public boolean getOneSessionPerGroupDefault(){
+        return bbbOneSessionPerGroupDefault;
     }
 
     public int getMaxLengthForDescription(){
