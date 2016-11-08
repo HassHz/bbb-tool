@@ -265,13 +265,6 @@
             <input id="recording" name="recording" type="checkbox" {if recordingChecked}checked{/if}/>
         </td>
       </tr>
-      <tr id="recordingReady" style="{if !recordingChecked}display:none;{/if}">
-        <td class="bbb_lbl">${D}{bbb_info_recordingReadyNotification}</td>
-        <td>
-            {var recordingReadyNotificationChecked = isNew ? recordingReadyNotificationDefault : meeting.recordingReadyNotification }
-            <input id="recordingReadyNotification" name="recordingReadyNotification" type="checkbox" {if recordingReadyNotificationChecked}checked{/if}/>
-        </td>
-      </tr>
       {/if}
       {if durationEnabled}
       <tr>
@@ -303,9 +296,7 @@
       <tr>
         <td class="bbb_lbl">Pre-upload Presentation:</td>
         <td>
-            {var preuploadPresentation = isNew ? preuploadpresentationDefault : meeting.preuploadPresentation }
-            <input id="preuploadPresentation" name="preuploadPresentation" type="checkbox" {if preuploadPresentation}checked{/if}/>
-            <input type="file" id="selectFile" name="selectFile" style="{if !preuploadPresentation}display:none;{else}display:inline;{/if}"/>
+            <input type="file" id="selectFile" name="selectFile" style="display:inline;"/>
             <span id="bbb_addFile_ajaxInd"></span>
             <input type="hidden" id="fileUrl" name="presentation" />
             <table id="fileView" class="attachList listHier indnt1" style="margin-bottom:.5em; margin-top:0; width:auto; display:none;">    
@@ -518,17 +509,18 @@
                 ${D}{bbb_status_finished}
             </span>
             {var displayLink = meeting.joinUrl && meeting.joinable && meeting.joinableMode == 'available'? 'display:inline' : 'display:none'}
-            <span>
+            <span id="meetingStatus">
                 (
                 <span id="meeting_joinlink_${D}{meeting.id}" style="${D}{displayLink}">
                         <a id="joinMeetingLink" target="_blank" href="javascript:;" onclick="return meetings.utils.joinMeeting('${D}{meeting.id}', '#joinMeetingLink', ${D}{meeting.multipleSessionsAllowed});" title="${D}{bbb_meetinginfo_launch_meeting_tooltip}" style="font-weight:bold">${D}{bbb_meetinginfo_link}</a>
-                        <img src="/library/image/silk/user_go.png" alt=">" style="vertical-align:middle"/>
+                        <i class="fa fa-sign-in"></i>
                 </span>
                 {if meeting.canEnd}
                 {var end_meetingClass = (meeting.joinable && meeting.joinableMode == 'inprogress')? "bbb_end_meeting_shown": "bbb_end_meeting_hidden" }
                 <div id="end_meeting_intermediate_${D}{meeting.id}" class="${D}{end_meetingClass}" >
                     &nbsp;|&nbsp;
                     <a id="end_session_link" href="javascript:;" onclick="return meetings.utils.endMeeting('${D}{escape(meeting.name)}','${D}{meeting.id}');" title="${D}{bbb_action_end_meeting_tooltip}" style="font-weight:bold">${D}{bbb_action_end_meeting}</a>
+                    <span><i class="fa fa-stop"></i></span>
                 </div>
                 {/if}
                 )
@@ -540,7 +532,7 @@
         <td>
             <span id="bbb_meeting_info_participants_count"></span>
             <a id="updateMeetingInfo" href="javascript:;" onclick="meetings.utils.checkOneMeetingAvailability('${D}{meeting.id}'); return false;" title="${D}{bbb_meetinginfo_updateinfo_tooltip}">
-                <img src="/library/image/silk/arrow_refresh_small.png" alt="(refresh)" style="vertical-align:middle"/>
+                <i class="fa fa-refresh" title="Refresh"></i>
             </a>
         </td>
       </tr>

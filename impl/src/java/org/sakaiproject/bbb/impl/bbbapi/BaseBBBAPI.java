@@ -49,6 +49,8 @@ import org.sakaiproject.bbb.api.BBBMeetingManager;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.content.api.ContentHostingService;
+import org.sakaiproject.authz.api.SecurityAdvisor;
+import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.util.ResourceLoader;
 import org.w3c.dom.Document;
@@ -75,6 +77,9 @@ public class BaseBBBAPI implements BBBAPI {
     protected String bbbSalt = null;
     /** Auto close BBB meeting window on exit? */
     protected boolean bbbAutocloseMeetingWindow = true;
+    /** Sakai property settings for features that don't have a checkbox */
+    protected boolean bbbPreuploadPresentation = true;
+    protected boolean bbbRecordingReadyNotification = false;
 
     // API Server Path
     protected final static String API_SERVERPATH = "/api/";
@@ -108,6 +113,8 @@ public class BaseBBBAPI implements BBBAPI {
 
     private ContentHostingService m_contentHostingService = (ContentHostingService) ComponentManager.get("org.sakaiproject.content.api.ContentHostingService");
 
+    private SecurityService m_securityService = (SecurityService) ComponentManager.get("org.sakaiproject.authz.api.SecurityService");
+
     protected Random randomGenerator = new Random(System.currentTimeMillis());
 
     // -----------------------------------------------------------------------
@@ -125,6 +132,8 @@ public class BaseBBBAPI implements BBBAPI {
         config = (ServerConfigurationService) ComponentManager.get(ServerConfigurationService.class);
 
         bbbAutocloseMeetingWindow = config.getBoolean(BBBMeetingManager.CFG_AUTOCLOSE_WIN, bbbAutocloseMeetingWindow);
+        bbbPreuploadPresentation = config.getBoolean(BBBMeetingManager.CFG_PREUPLOADPRESENTATION_ENABLED, bbbPreuploadPresentation);
+        bbbRecordingReadyNotification = config.getBoolean(BBBMeetingManager.CFG_RECORDINGREADYNOTIFICATION_ENABLED, bbbRecordingReadyNotification);
     }
 
     public String getUrl() {
@@ -208,8 +217,7 @@ public class BaseBBBAPI implements BBBAPI {
             if (duration.compareTo("0") > 0)
                 welcomeMessage += "<br><br><b>" + toolMessages.getFormattedMessage("bbb_welcome_message_duration_warning", new Object[] { duration });
 
-            String recordingReadyNotification = meeting.getRecordingReadyNotification() != null && meeting.getRecordingReadyNotification().booleanValue() ? "true" : "false";
-            if (recordingReadyNotification == "true" && recording == "true" && bbbUrl.contains("blindsidenetworks.com")){
+            if (recording == "true" && bbbRecordingReadyNotification) {
                 query.append("&meta_bn-recording-ready-url=");
                 StringBuilder recordingReadyUrl = new StringBuilder(config.getServerUrl());
                 recordingReadyUrl.append("/direct");
@@ -223,10 +231,12 @@ public class BaseBBBAPI implements BBBAPI {
 
             query.append(getCheckSumParameterForQuery(APICALL_CREATE, query.toString()));
 
+            SecurityAdvisor sa = editResourceSecurityAdvisor();
             //preupload presentation
             String xml_presentation = "";
-            if (meeting.getPreuploadPresentation()){
+            if (bbbPreuploadPresentation) {
                 if (meeting.getPresentation() != "" && meeting.getPresentation() != null){
+                    m_securityService.pushAdvisor(sa);
                     m_contentHostingService.setPubView(meeting.getPresentation().substring(meeting.getPresentation().indexOf("/attachment")), true);
                     StringBuilder presentationUrl = new StringBuilder(config.getServerUrl());
                     presentationUrl.append(meeting.getPresentation());
@@ -242,9 +252,16 @@ public class BaseBBBAPI implements BBBAPI {
         } catch (UnsupportedEncodingException e) {
             throw new BBBException(BBBException.MESSAGEKEY_INTERNALERROR, e.getMessage(), e);
         }
-        m_contentHostingService.setPubView(meeting.getPresentation().substring(meeting.getPresentation().indexOf("/attachment")), false);
+        if (meeting.getPresentation() != "" && meeting.getPresentation() != null)
+            m_contentHostingService.setPubView(meeting.getPresentation().substring(meeting.getPresentation().indexOf("/attachment")), false);
         return meeting;
     }
+
+    private SecurityAdvisor editResourceSecurityAdvisor() {
+		return (userId, function, reference) -> {
+			return SecurityAdvisor.SecurityAdvice.ALLOWED;
+		};
+	}
 
     /** Check if meeting is running on BBB server. */
     public boolean isMeetingRunning(String meetingID) 

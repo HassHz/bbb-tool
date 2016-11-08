@@ -436,7 +436,7 @@ public class BBBMeetingManagerImpl implements BBBMeetingManager {
         
     }
 
-    public boolean endMeeting(String meetingId, String groupId)
+    public boolean endMeeting(String meetingId, String groupId, boolean endAll)
     		throws SecurityException, BBBException {
         BBBMeeting meeting = storageManager.getMeeting(meetingId);
 
@@ -450,7 +450,7 @@ public class BBBMeetingManagerImpl implements BBBMeetingManager {
         } else {
             bbbAPI.endMeeting(meetingId, meeting.getModeratorPassword());
 
-            if(meeting.getOneSessionPerGroup()){
+            if(meeting.getOneSessionPerGroup() && endAll){
                 //End all group sessions that could be running
                 Site site;
                 try {
@@ -804,9 +804,9 @@ public class BBBMeetingManagerImpl implements BBBMeetingManager {
     public String getRecordingDefault(){
         return "" + bbbAPI.getRecordingDefault();
     }
-    
-    public String getRecordingReadyNotificationDefault(){
-        return "" + bbbAPI.getRecordingReadyNotificationDefault();
+
+    public String isRecordingReadyNotificationEnabled(){
+        return "" + bbbAPI.isRecordingReadyNotificationEnabled();
     }
 
     public String isDurationEnabled(){
@@ -843,10 +843,6 @@ public class BBBMeetingManagerImpl implements BBBMeetingManager {
 
     public String isPreuploadPresentationEnabled(){
         return "" + bbbAPI.isPreuploadPresentationEnabled();
-    }
-
-    public String getPreuploadPresentationDefault(){
-        return "" + bbbAPI.getPreuploadPresentationDefault();
     }
 
     public String getMaxLengthForDescription(){
