@@ -1007,7 +1007,7 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
         } else {
             return commonHtmlHeader +
                    "    <script type='text/javascript' language='JavaScript'>\n" +
-                   "        window.opener.waitForModeratorRefresh('" + meetingId + "');\n" +
+                   "        window.opener.setTimeout(\"meetings.utils.checkOneMeetingAvailability('" + meetingId + "')\", 15000 );\n" +
                    "    </script>\n" +
                    "    <meta http-equiv='refresh' content='0; url=" + joinUrl + "' />\n" +
                    "  </head>\n" +
