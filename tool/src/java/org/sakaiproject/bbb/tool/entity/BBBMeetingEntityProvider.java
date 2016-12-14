@@ -235,12 +235,6 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
         boolean recording = (recordingStr != null && 
                 (recordingStr.toLowerCase().equals("on") || recordingStr.toLowerCase().equals("true")));
         meeting.setRecording(recording ? Boolean.TRUE : Boolean.FALSE);
-        
-        // recordingReadyNotification flag
-        String recordingReadyNotificationStr = (String) params.get("recordingReadyNotification");
-        boolean recordingReadyNotification = (recordingReadyNotificationStr != null &&
-                (recordingReadyNotificationStr.toLowerCase().equals("on") || recordingReadyNotificationStr.toLowerCase().equals("true")));
-        meeting.setRecordingReadyNotification(recordingReadyNotification ? Boolean.TRUE : Boolean.FALSE);
 
         // waitForModerator flag
         String waitForModeratorStr = (String) params.get("waitForModerator");
@@ -258,11 +252,11 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
         String presentationUrl = (String) params.get("presentation");
         meeting.setPresentation(presentationUrl);
 
-        // oneSessionPerGroup flag
-        String oneSessionPerGroupStr = (String) params.get("oneSessionPerGroup");
-        boolean oneSessionPerGroup = (oneSessionPerGroupStr != null &&
-                (oneSessionPerGroupStr.toLowerCase().equals("on") || oneSessionPerGroupStr.toLowerCase().equals("true")));
-        meeting.setOneSessionPerGroup(Boolean.valueOf(oneSessionPerGroup));
+        // groupSessions flag
+        String groupSessionsStr = (String) params.get("groupSessions");
+        boolean groupSessions = (groupSessionsStr != null &&
+                (groupSessionsStr.toLowerCase().equals("on") || groupSessionsStr.toLowerCase().equals("true")));
+        meeting.setGroupSessions(Boolean.valueOf(groupSessions));
 
         // participants
         String meetingOwnerId = meeting.getOwnerId();
@@ -338,12 +332,6 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
             boolean recording = (recordingStr != null && 
                     (recordingStr.toLowerCase().equals("on") || recordingStr.toLowerCase().equals("true")));
             meeting.setRecording(Boolean.valueOf(recording));
-            
-            // update recordingReadyNotification flag
-            String recordingReadyNotificationStr = (String) params.get("recordingReadyNotification");
-            boolean recordingReadyNotification = (recordingReadyNotificationStr != null &&
-                    (recordingReadyNotificationStr.toLowerCase().equals("on") || recordingReadyNotificationStr.toLowerCase().equals("true")));
-            meeting.setRecordingReadyNotification(Boolean.valueOf(recordingReadyNotification));
 
             // update recordingDuration
             String recordingDurationStr = (String) params.get("recordingDuration");
@@ -382,14 +370,14 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
             if (presentationUrl != null && presentationUrl != "") {
                 meeting.setPresentation(presentationUrl);
             } else {
-                meeting.setPresentation(null);
+                meeting.setPresentation("");
             }
 
-            // update oneSessionPerGroup flag
-            String oneSessionPerGroupStr = (String) params.get("oneSessionPerGroup");
-            boolean oneSessionPerGroup = (oneSessionPerGroupStr != null &&
-                    (oneSessionPerGroupStr.toLowerCase().equals("on") || oneSessionPerGroupStr.toLowerCase().equals("true")));
-            meeting.setOneSessionPerGroup(Boolean.valueOf(oneSessionPerGroup));
+            // update groupSessions flag
+            String groupSessionsStr = (String) params.get("groupSessions");
+            boolean groupSessions = (groupSessionsStr != null &&
+                    (groupSessionsStr.toLowerCase().equals("on") || groupSessionsStr.toLowerCase().equals("true")));
+            meeting.setGroupSessions(Boolean.valueOf(groupSessions));
 
             // update dates
             if (params.get("startDate") != null)
@@ -582,14 +570,13 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
         if (recordingEnabled != null) {
             map.put("recordingEnabled", recordingEnabled);
         }
+        Boolean recordingEditable = Boolean.parseBoolean(meetingManager.isRecordingEditable());
+        if (recordingEditable != null) {
+            map.put("recordingEditable", recordingEditable);
+        }
         Boolean recordingDefault = Boolean.parseBoolean(meetingManager.getRecordingDefault());
         if (recordingDefault != null) {
             map.put("recordingDefault", recordingDefault);
-        }
-        //UX settings for 'recording ready notification' checkbox
-        Boolean recordingreadynotificationEnabled = Boolean.parseBoolean(meetingManager.isRecordingReadyNotificationEnabled());
-        if (recordingreadynotificationEnabled != null) {
-            map.put("recordingreadynotificationEnabled", recordingreadynotificationEnabled);
         }
         //UX settings for 'duration' box
         Boolean durationEnabled = Boolean.parseBoolean(meetingManager.isDurationEnabled());
@@ -605,6 +592,10 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
         if (waitmoderatorEnabled != null) {
             map.put("waitmoderatorEnabled", waitmoderatorEnabled);
         }
+        Boolean waitmoderatorEditable = Boolean.parseBoolean(meetingManager.isWaitModeratorEditable());
+        if (waitmoderatorEditable != null) {
+            map.put("waitmoderatorEditable", waitmoderatorEditable);
+        }
         Boolean waitmoderatorDefault = Boolean.parseBoolean(meetingManager.getWaitModeratorDefault());
         if (waitmoderatorDefault != null) {
             map.put("waitmoderatorDefault", waitmoderatorDefault);
@@ -613,6 +604,10 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
         Boolean multiplesessionsallowedEnabled = Boolean.parseBoolean(meetingManager.isMultipleSessionsAllowedEnabled());
         if (multiplesessionsallowedEnabled != null) {
             map.put("multiplesessionsallowedEnabled", multiplesessionsallowedEnabled);
+        }
+        Boolean multiplesessionsallowedEditable = Boolean.parseBoolean(meetingManager.isMultipleSessionsAllowedEditable());
+        if (multiplesessionsallowedEditable != null) {
+            map.put("multiplesessionsallowedEditable", multiplesessionsallowedEditable);
         }
         Boolean multiplesessionsallowedDefault = Boolean.parseBoolean(meetingManager.getMultipleSessionsAllowedDefault());
         if (multiplesessionsallowedDefault != null) {
@@ -623,14 +618,18 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
         if (preuploadpresentationEnabled != null) {
             map.put("preuploadpresentationEnabled", preuploadpresentationEnabled);
         }
-        //UX settings for 'one session per group' box
-        Boolean onesessionpergroupEnabled = Boolean.parseBoolean(meetingManager.isOneSessionPerGroupEnabled());
-        if (onesessionpergroupEnabled != null) {
-            map.put("onesessionpergroupEnabled", onesessionpergroupEnabled);
+        //UX settings for 'group sessions' box
+        Boolean groupsessionsEnabled = Boolean.parseBoolean(meetingManager.isGroupSessionsEnabled());
+        if (groupsessionsEnabled != null) {
+            map.put("groupsessionsEnabled", groupsessionsEnabled);
         }
-        Boolean onesessionpergroupDefault = Boolean.parseBoolean(meetingManager.getOneSessionPerGroupDefault());
-        if (onesessionpergroupDefault != null) {
-            map.put("onesessionpergroupdefault", onesessionpergroupDefault);
+        Boolean groupsessionsEditable = Boolean.parseBoolean(meetingManager.isGroupSessionsEditable());
+        if (groupsessionsEditable != null) {
+            map.put("groupsessionsEditable", groupsessionsEditable);
+        }
+        Boolean groupsessionsDefault = Boolean.parseBoolean(meetingManager.getGroupSessionsDefault());
+        if (groupsessionsDefault != null) {
+            map.put("groupsessionsDefault", groupsessionsDefault);
         }
         //UX settings for 'description' box
         String descriptionMaxLength = meetingManager.getMaxLengthForDescription();
@@ -761,6 +760,10 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
 
         String siteId = (String) params.get("siteId");
 
+        if(!meetingManager.getCanView(siteId)){
+            throw new SecurityException("You are not allowed to view recordings");
+        }
+
         try {
             Map<String, Object> recordingsResponse = meetingManager
                     .getSiteRecordings(siteId);
@@ -884,9 +887,9 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
                 throw new EntityException("This meeting is no longer available.", null, 404);
             }
             
-            //One session per group
+            //group sessions
             String groupId = (String) params.get("groupId");
-            if (groupId != null && meeting.getOneSessionPerGroup()) {
+            if (groupId != null && meeting.getGroupSessions()) {
                 meeting.setId(meeting.getId() + "[" + groupId + "]");
             } else {
                 meeting.setId(meeting.getId());
@@ -911,26 +914,43 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
             meetingManager.logMeetingJoin(meetingId);
 
             //Build the corresponding page for joining
+            //If the user is not a moderator and WaitForModerator is enabled, do not create the meeting
+            Boolean waitmoderatorEnabled = Boolean.parseBoolean(meetingManager.isWaitModeratorEnabled());
+            if (waitmoderatorEnabled == null)
+                waitmoderatorEnabled = true;
             String html;
-            //If the user is not a moderator and Wait for Moderator is enabled, do not create the meeting
-            if( meeting.getWaitForModerator() ){
+            if( waitmoderatorEnabled && meeting.getWaitForModerator() ){
                 Participant p = meetingManager.getParticipantFromMeeting(meeting, userDirectoryService.getCurrentUser().getId());
                 if( !(Participant.MODERATOR).equals(p.getRole())) {
-                    Map<String, Object> meetingInfo = meetingManager.getMeetingInfo(meetingId, "");
+                    Map<String, Object> meetingInfo = null;
+                    if(groupId != null && meeting.getGroupSessions())
+                        meetingInfo = meetingManager.getMeetingInfo(meetingId, groupId);
+                    else
+                        meetingInfo = meetingManager.getMeetingInfo(meetingId, "");
+
                     if( meetingInfo == null || meetingInfo.isEmpty() || Integer.parseInt((String)meetingInfo.get("moderatorCount")) <= 0 ) {
-                        html = getHtmlForJoining(joinUrl, meetingId, WAITFORMODERATOR);
+                        //check for group session
+                        if (groupId != null && meeting.getGroupSessions())
+                            html = getHtmlForJoining(joinUrl, meetingId, WAITFORMODERATOR, groupId);
+                        else
+                            html = getHtmlForJoining(joinUrl, meetingId, WAITFORMODERATOR, "");
                         return html;
                     }
                 }
             }
-            //If the user is a moderator / wait for moderator is not enabled, create the meeting
+
+            //Else if the user is a moderator / WaitForModerator is not enabled, create the meeting
             try {
                 meetingManager.checkJoinMeetingPreConditions(meeting);
             } catch (BBBException e) {
                 throw new EntityException(e.getPrettyMessage(), meeting.getReference(), 400);
             }
 
-            html = getHtmlForJoining(joinUrl, meetingId, NOTWAITFORMODERATOR);
+            //check for group session
+            if (groupId != null && meeting.getGroupSessions())
+                html = getHtmlForJoining(joinUrl, meetingId, NOTWAITFORMODERATOR, groupId);
+            else
+                html = getHtmlForJoining(joinUrl, meetingId);
             return html;
 
         } catch (Exception e) {
@@ -940,10 +960,10 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
     }
 
     private String getHtmlForJoining(String joinUrl, String meetingId){
-        return getHtmlForJoining(joinUrl, meetingId, NOTWAITFORMODERATOR);
+        return getHtmlForJoining(joinUrl, meetingId, NOTWAITFORMODERATOR, "");
     }
 
-    private String getHtmlForJoining(String joinUrl, String meetingId, boolean waitformoderator){
+    private String getHtmlForJoining(String joinUrl, String meetingId, boolean waitformoderator, String groupId){
         ResourceLoader toolMessages = new ResourceLoader("ToolMessages");
         Locale locale = (new ResourceLoader()).getLocale();
         toolMessages.setContextLocale(locale);
@@ -971,7 +991,7 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
                    "            // Disable caching of AJAX responses\n" +
                    "            // Validates if a moderator has joined\n" +
                    "            jQuery.ajax( {\n" +
-                   "                url: '/direct/bbb-tool/" + meetingId + "/getMeetingInfo.json',\n" +
+                   "                url: '/direct/bbb-tool/" + meetingId + "/getMeetingInfo.json" + (groupId.equals("") ? "" : "?groupId=" + groupId) + "',\n" +
                    "                dataType : 'json',\n" +
                    "                async : false,\n" +
                    "                cache: false,\n" +
@@ -988,7 +1008,7 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
                    "                        setTimeout(worker, 5000);\n" +
                    "                    } else {\n" +
                    "                        if (typeof window.opener != 'undefined') {\n" +
-                   "                           window.opener.setTimeout(\"meetings.utils.checkOneMeetingAvailability('" + meetingId + "')\", 15000 );\n" +
+                   "                           window.opener.setTimeout(\"meetings.utils.checkOneMeetingAvailability('" + meetingId + "'" + (groupId.equals("") ? "" : ", '" + groupId + "'") + ")\", 15000 );\n" +
                    "                        }\n" +
                    "                        window.location.reload();\n" +
                    "                    }\n" +
@@ -1006,9 +1026,9 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
                    commonHtmlFooter;
         } else {
             return commonHtmlHeader +
-                   "    <script type='text/javascript' language='JavaScript'>\n" +
-                   "        window.opener.setTimeout(\"meetings.utils.checkOneMeetingAvailability('" + meetingId + "')\", 15000 );\n" +
-                   "    </script>\n" +
+                   //"    <script type='text/javascript' language='JavaScript'>\n" +
+                   //"        window.opener.setTimeout(\"meetings.utils.checkOneMeetingAvailability('" + meetingId + "'" + (groupId.equals("") ? "" : ", '" + groupId + "'") + ")\", 15000 );\n" +
+                   //"    </script>\n" +
                    "    <meta http-equiv='refresh' content='0; url=" + joinUrl + "' />\n" +
                    "  </head>\n" +
                    "  <body>\n" +
@@ -1152,20 +1172,16 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
         String bbbSalt = new String(Base64.encodeBase64(bbbSaltString.getBytes()));
         Claims claims = Jwts.parser().setSigningKey(bbbSalt).parseClaimsJws(params.get("signed_parameters").toString()).getBody();
         String meeting_id = claims.get("meeting_id").toString();
-        logger.debug("Meeting ID: " + meeting_id);
 
         boolean notified = meetingManager.recordingReady(meeting_id);
-        logger.debug(notified);
         
         ActionReturn response = null;
         if (notified) {
             response = new ActionReturn("OK");
             response.setResponseCode(200);
-            logger.debug(response);
         } else {
             response = new ActionReturn("Gone");
             response.setResponseCode(410);
-            logger.debug(response);
         }
         return response;
     }
@@ -1273,7 +1289,7 @@ public class BBBMeetingEntityProvider extends AbstractEntityProvider implements
             try {
                 BBBMeeting meeting = meetingManager.getMeeting(meetingId);
                 if (meeting != null) {
-                    meeting.setPresentation(null);
+                    meeting.setPresentation("");
                     try {
                         //Update meeting presentation value
                         if (!meetingManager.updateMeeting(meeting, false, false, false, 0L, true))

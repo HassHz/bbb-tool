@@ -372,7 +372,7 @@
                 var end_meetingText = "";
                 if( meetings.currentMeetings[i].groupActive || (meetings.currentMeetings[i].joinable && meetings.currentMeetings[i].joinableMode == 'inprogress') ){
                     end_meetingClass = "bbb_end_meeting_shown";
-                    if(meetings.currentMeetings[i].oneSessionPerGroup){
+                    if(meetings.currentMeetings[i].groupSessions){
                         end_meetingText = "&nbsp;|&nbsp;&nbsp;" + "<a href=\"javascript:;\" onclick=\"return meetings.utils.endMeeting('" + escape(meetings.currentMeetings[i].name) + "','" + meetings.currentMeetings[i].id + "', "+undefined+", true);\" title=\"" + bbb_action_end_meeting_tooltip + "\">" + bbb_action_end_meeting + "</a>";
                     } else {
                         end_meetingText = "&nbsp;|&nbsp;&nbsp;" + "<a href=\"javascript:;\" onclick=\"return meetings.utils.endMeeting('" + escape(meetings.currentMeetings[i].name) + "','" + meetings.currentMeetings[i].id + "');\" title=\"" + bbb_action_end_meeting_tooltip + "\">" + bbb_action_end_meeting + "</a>";
@@ -441,12 +441,12 @@
         
         // specific meeting permissions
         if(meetings.currentUser.id === meeting.ownerId) {
-            meeting.canEdit = meetings.userPerms.bbbEditOwn | meetings.userPerms.bbbEditAny;
-            meeting.canEnd = meetings.userPerms.bbbEditOwn | meetings.userPerms.bbbEditAny;
-            meeting.canDelete = meetings.userPerms.bbbDeleteOwn | meetings.userPerms.bbbDeleteAny;
+            meeting.canEdit = meetings.userPerms.bbbEditOwn || meetings.userPerms.bbbEditAny;
+            meeting.canEnd = (meetings.userPerms.bbbEditOwn || meetings.userPerms.bbbEditAny) && (meetings.userPerms.bbbDeleteOwn || meetings.userPerms.bbbDeleteAny);
+            meeting.canDelete = meetings.userPerms.bbbDeleteOwn || meetings.userPerms.bbbDeleteAny;
         }else{
             meeting.canEdit = meetings.userPerms.bbbEditAny;
-            meeting.canEnd = meetings.userPerms.bbbEditAny;
+            meeting.canEnd = meetings.userPerms.bbbEditAny && meetings.userPerms.bbbDeleteAny;
             meeting.canDelete = meetings.userPerms.bbbDeleteAny;
         }
 	};
@@ -463,9 +463,10 @@
                 $('#meetingStatus').show();
 				if ( meeting.hasBeenForciblyEnded == "true" ) {
 					meeting.joinableMode = "unavailable";
+                    $('#meetingStatus').hide();
 				} else if ( meeting.running ) {
 					meeting.joinableMode = "inprogress";
-                    if (!meeting.canEnd && !meeting.multipleSessionsAllowed)
+                    if (!meeting.canEnd && (!meeting.multipleSessionsAllowed || !meetings.settings.config.addUpdateFormParameters.multiplesessionsallowedEnabled) && meetings.utils.isUserInMeeting(meetings.currentUser.displayName, meeting))
                         $('#meetingStatus').hide();
 				}
 			} else {
@@ -483,7 +484,7 @@
             var end_meetingText = "";
             if( meeting.joinable && meeting.joinableMode == 'inprogress' ){
                 end_meetingClass = "bbb_end_meeting_shown";
-                if(meeting.oneSessionPerGroup){
+                if(meeting.groupSessions){
                     end_meetingText = "&nbsp;|&nbsp;&nbsp;" + "<a href=\"javascript:;\" onclick=\"return meetings.utils.endMeeting('" + escape(meeting.name) + "','" + meeting.id + "', "+undefined+", true);\" title=\"" + bbb_action_end_meeting_tooltip + "\">" + bbb_action_end_meeting + "</a>";
                 } else {
                     end_meetingText = "&nbsp;|&nbsp;&nbsp;" + "<a href=\"javascript:;\" onclick=\"return meetings.utils.endMeeting('" + escape(meeting.name) + "','" + meeting.id + "');\" title=\"" + bbb_action_end_meeting_tooltip + "\">" + bbb_action_end_meeting + "</a>";
@@ -664,7 +665,7 @@
         		response = data;
             },
             error : function (xmlHttpRequest,status,error) {
-            	meetings.utils.handleError(bbb_err_get_meeting, xmlHttpRequest.status, xmlHttpRequest.statusText);
+            	meetings.utils.handleError(bbb_err_get_recording, xmlHttpRequest.status, xmlHttpRequest.statusText);
             }
         });
         return response;
@@ -769,13 +770,13 @@
 
         if(meeting.joinable) {
             if ( meeting.joinableMode === "available" ){
-                if( meeting.multipleSessionsAllowed ) {
-                    $('#meeting_joinlink_'+meeting.id).fadeIn();
+                if( meeting.multipleSessionsAllowed && meetings.settings.config.addUpdateFormParameters.multiplesessionsallowedEnabled ) {
+                    $('#meeting_joinlink_'+meeting.id).show();
                 } else {
                     if( !meetings.utils.isUserInMeeting(meetings.currentUser.displayName, meeting) ) {
-                        $('#meeting_joinlink_'+meeting.id).fadeIn();
+                        $('#meeting_joinlink_'+meeting.id).show();
                     } else {
-                        $('#meeting_joinlink_'+meeting.id).fadeOut();
+                        $('#meeting_joinlink_'+meeting.id).hide();
                     }
                 }
                 // Update the actionbar on the list
@@ -799,11 +800,11 @@
                     .text(bbb_status_joinable_available);
             } else if ( meeting.joinableMode === "inprogress" ){
                 var end_meetingTextIntermediate = "&nbsp;|&nbsp;&nbsp;<a id=\"end_session_link\" href=\"javascript:;\" onclick=\"return meetings.utils.endMeeting('" + escape(meeting.name) + "','" + meeting.id + "');\" title=\"" + bbb_action_end_meeting_tooltip + "\" style=\"font-weight:bold\">" + bbb_action_end_meeting + "</a>&nbsp;<span><i class=\"fa fa-stop\"></i></span>";
-                if( meeting.multipleSessionsAllowed ) {
-                    $('#meeting_joinlink_'+meeting.id).fadeIn();
+                if( meeting.multipleSessionsAllowed && meetings.settings.config.addUpdateFormParameters.multiplesessionsallowedEnabled ) {
+                    $('#meeting_joinlink_'+meeting.id).show();
                 } else {
                     if( !meetings.utils.isUserInMeeting(meetings.currentUser.displayName, meeting) ) {
-                        $('#meeting_joinlink_'+meeting.id).fadeIn();
+                        $('#meeting_joinlink_'+meeting.id).show();
                     } else {
                         $('#meeting_joinlink_'+meeting.id).hide();
                         end_meetingTextIntermediate = "<a id=\"end_session_link\" href=\"javascript:;\" onclick=\"return meetings.utils.endMeeting('" + escape(meeting.name) + "','" + meeting.id + "');\" title=\"" + bbb_action_end_meeting_tooltip + "\" style=\"font-weight:bold\">" + bbb_action_end_meeting + "</a>&nbsp;<span><i class=\"fa fa-stop\"></i></span>";
@@ -923,17 +924,27 @@
 		if( recordings == null ){
             meetings.utils.showMessage(bbb_err_get_recording, 'warning');
         } else {
-        	meetings.utils.hideMessage();	
-        	
-        	var htmlRecordings = "";
-            var groupID = groupId ? "', 'groupId':'" + groupId : "";
-        	if(recordings.length > 0)
-				htmlRecordings = '(<a href="javascript:;" onclick="return meetings.switchState(\'recordings_meeting\',{\'meetingId\':\''+ meetingId + groupID +'\'})" title="">' + bbb_meetinginfo_recordings(unescape(recordings.length)) + '</a>)&nbsp;&nbsp;';
-        	else
-            	htmlRecordings = "(" + bbb_meetinginfo_recordings(unescape(recordings.length)) + ")";
-        		
-        	$('#recording_link_'+meetingId).html(htmlRecordings);
-		}
+        	meetings.utils.hideMessage();
+            var meetingRecordingEnabled = true;
+            for(var i=0; i<meetings.currentMeetings.length; i++){
+                if (meetings.currentMeetings[i].id === meetingId) {
+                    meetingRecordingEnabled = meetings.currentMeetings[i].recording;
+                }
+            }
+            if (!meetings.userPerms.bbbRecordingView || !meetings.settings.config.addUpdateFormParameters.recordingEnabled || !meetingRecordingEnabled) {
+                $('#meeting_recordings').hide();
+            } else {
+                $('#meeting_recordings').show();
+                var htmlRecordings = "";
+                var groupID = groupId ? "', 'groupId':'" + groupId : "";
+                if(recordings.length > 0)
+                    htmlRecordings = '(<a href="javascript:;" onclick="return meetings.switchState(\'recordings_meeting\',{\'meetingId\':\''+ meetingId + groupID +'\'})" title="">' + bbb_meetinginfo_recordings(unescape(recordings.length)) + '</a>)&nbsp;&nbsp;';
+                else
+                    htmlRecordings = "(" + bbb_meetinginfo_recordings(unescape(recordings.length)) + ")";
+
+                $('#recording_link_'+meetingId).html(htmlRecordings);
+            }
+        }
     };
 
     // Get notice message to be displayed on the UI (first time access)
@@ -1266,7 +1277,8 @@
             // This approach should be replaced as soon Sakai offers the way to customize the toolbar 
             // in the same call.
             sakai.editor.editors.launch = (function (targetId, config, w, h) {
-                var original = sakai.editor.editors.launch;
+                var original = sakai.editor.launch;
+
                 if( toolbarSet == 'BBB') {
                     return function (targetId, config, w, h) {
                         var folder = "";

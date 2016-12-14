@@ -357,14 +357,12 @@ public class BBBStorageManager {
             meeting.setStartDate(meetingRS.getTimestamp("START_DATE"));
             meeting.setEndDate(meetingRS.getTimestamp("END_DATE"));
             meeting.setRecording(meetingRS.getBoolean("RECORDING"));
-            meeting.setRecordingReadyNotification(meetingRS.getBoolean("RECORDING_READY_NOTIFICATION"));
-            meeting.setRecordingDuration(meetingRS.getLong("RECORDING_DURATION"));
             meeting.setRecordingDuration(meetingRS.getLong("RECORDING_DURATION"));
             meeting.setVoiceBridge(meetingRS.getInt("VOICE_BRIDGE"));
             meeting.setWaitForModerator(meetingRS.getBoolean("WAIT_FOR_MODERATOR"));
             meeting.setMultipleSessionsAllowed(meetingRS.getBoolean("MULTIPLE_SESSIONS_ALLOWED"));
             meeting.setPresentation(meetingRS.getString("PRESENTATION"));
-            meeting.setOneSessionPerGroup(meetingRS.getBoolean("ONE_SESSION_PER_GROUP"));
+            meeting.setGroupSessions(meetingRS.getBoolean("GROUP_SESSIONS"));
             meeting.setProps(XmlUtil.convertXmlToProps(meetingRS.getString("PROPERTIES")));
             meeting.setDeleted(meetingRS.getBoolean("DELETED"));
 
